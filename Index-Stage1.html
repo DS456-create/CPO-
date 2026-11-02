@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPO 封裝 - Arduino 殼 + 光子肉 | 第1段 殼</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Noto Sans TC", sans-serif;background:#0b1b24;color:#b9d2ce;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+header{height:48px;background:#10232b;border-bottom:1px solid #1a333c;display:flex;align-items:center;padding:0 16px;gap:12px}
+header h1{font-size:16px;color:#70d8bd}
+.main{flex:1;display:flex;overflow:hidden}
+.left{width:260px;background:#10232b;border-right:1px solid #1a333c;overflow-y:auto;padding:12px}
+.left h3{font-size:12px;color:#67828c;margin:8px 0 4px;letter-spacing:1px}
+.comp{padding:8px 10px;border-radius:8px;cursor:pointer;display:flex;gap:8px;align-items:center;margin-bottom:4px;background:transparent;border:1px solid transparent}
+.comp:hover{background:#164d43;border-color:#26434b}
+.comp.active{background:#164d43;border-color:#70d8bd;color:#ffda97}
+.comp .dot{width:8px;height:8px;border-radius:50%;background:#d6ad70}
+.center{flex:1;position:relative;background:radial-gradient(ellipse at center, #10232b 0%, #0b1b24 100%)}
+#canvas{width:100%;height:100%;display:block}
+.bottom-bar{position:absolute;bottom:12px;left:12px;right:12px;background:rgba(16,35,43,0.9);border:1px solid #26434b;border-radius:10px;padding:8px 12px;display:flex;gap:12px;align-items:center;backdrop-filter:blur(6px)}
+.slider{flex:1}
+.right{width:320px;background:#0f2430;border-left:1px solid #1a333c;display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:1px solid #1a333c}
+.tab{flex:1;padding:10px 0;text-align:center;font-size:13px;cursor:pointer;color:#67828c;border-bottom:2px solid transparent}
+.tab.active{color:#70d8bd;border-bottom-color:#70d8bd}
+.tab-content{padding:16px;overflow-y:auto;flex:1;font-size:13px;line-height:1.7}
+.course-bar{height:72px;background:#10232b;border-top:1px solid #1a333c;display:flex;gap:8px;padding:8px;overflow-x:auto}
+.course{ min-width:140px;background:#0b1b24;border:1px solid #1a333c;border-radius:8px;padding:8px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px}
+.course.active{border-color:#70d8bd;background:#164d43}
+#hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:#10232b;border:1px solid #70d8bd;color:#ffda97;padding:6px 14px;border-radius:20px;font-size:12px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<header><h1>ARDUINO 入門 · CPO 封裝版</h1><span style="font-size:12px;color:#67828c">探索 · 理解 · 動手 — 第1段 殼</span><span style="margin-left:auto;font-size:11px">基礎 1/4</span></header>
+<div class="main">
+<div class="left">
+<h3>元件 · 視圖中有12個</h3>
+<div class="comp active"><div class="dot"></div> GPU/ASIC</div>
+<div class="comp"><div class="dot"></div> Optical engines</div>
+<div class="comp"><div class="dot"></div> Driver/receiver</div>
+<div class="comp"><div class="dot"></div> Microbumps</div>
+<div class="comp"><div class="dot"></div> Interposer</div>
+<div class="comp"><div class="dot"></div> Package substrate</div>
+<div class="comp"><div class="dot"></div> External laser</div>
+<div class="comp"><div class="dot"></div> Fibers & couplers</div>
+<div class="comp"><div class="dot"></div> SOI stack</div>
+<div class="comp"><div class="dot"></div> Waveguide</div>
+<div class="comp"><div class="dot"></div> Microring</div>
+<div class="comp"><div class="dot"></div> Ge photodetectors</div>
+<h3>操作</h3>
+<div style="font-size:11px;color:#67828c;padding:4px 8px">拖動旋轉 · 滾輪縮放 · 點擊零件</div>
+</div>
+<div class="center">
+<canvas id="canvas"></canvas>
+<div id="hint">第1段：殼已完成，下一段將加入 PackageModel</div>
+<div class="bottom-bar">
+<span style="font-size:11px">Separate the layers</span>
+<input class="slider" type="range" min="0" max="100" value="85" disabled>
+<span style="font-size:11px">Wavelength: 1548 1550 1552 1554 nm (下一段啟用)</span>
+</div>
+</div>
+<div class="right">
+<div class="tabs"><div class="tab active">概覽</div><div class="tab">引腳圖</div><div class="tab">示例</div><div class="tab">規格</div></div>
+<div class="tab-content" id="tabContent">
+<b style="color:#ffda97">轉動轉盤 → CPO 共封裝</b><br><br>
+這是第1段：只做Arduino的殼。<br><br>
+左邊12個零件是從你CPO Explorer截圖來的：GPU/ASIC, Optical engines...<br><br>
+中間3D現在是 placeholder 方塊，下一段會用 <code>scene.tsx</code> 裡的 <code>InstancedMesh</code> 畫焊球、<code>TubeGeometry</code> 畫光纖。<br><br>
+顏色已鎖死：#164d43 深綠板 + #70d8bd 薄荷光 + #d6ad70 金色焊點<br><br>
+版面：左260px / 中間最大 / 右320px，跟你第4課截圖一樣。<br><br>
+<b>TODO: PackageModel</b><br>
+<b>TODO: Curve 光纖</b><br>
+<b>TODO: Wavelength 開關</b>
+</div>
+</div>
+</div>
+<div class="course-bar">
+<div class="course">12. FCBGA基板</div>
+<div class="course">13. QFN封裝</div>
+<div class="course">14. 800G OSFP</div>
+<div class="course active">15. CPO共封裝光學</div>
+<div class="course">16. PCB基板</div>
+</div>
+<script>
+// 簡易轉視角：target, theta, phi, radius
+let target = new THREE.Vector3(0,0,0);
+let theta = 0.8, phi = 0.9, radius = 18;
+let isDragging=false, lastX=0, lastY=0;
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+renderer.setClearColor(0x0b1b24, 0);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40, canvas.clientWidth/canvas.clientHeight, 0.1, 100);
+const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+scene.add(ambient);
+const dir = new THREE.DirectionalLight(0xfff0d4, 2);
+dir.position.set(8,22,10);
+scene.add(dir);
+// placeholder PackageModel - 之後換成真的
+const geo = new THREE.BoxGeometry(5,0.6,3.5);
+const mat = new THREE.MeshStandardMaterial({color:0x164d43, roughness:0.4, metalness:0.45});
+const mesh = new THREE.Mesh(geo, mat);
+scene.add(mesh);
+const edges = new THREE.EdgesGeometry(geo);
+const line = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({color:0x70d8bd}));
+mesh.add(line);
+const goldGeo = new THREE.SphereGeometry(0.08, 8,6);
+const goldMat = new THREE.MeshStandardMaterial({color:0xd6ad70, metalness:0.9});
+for(let i=0;i<20;i++){
+  const s = new THREE.Mesh(goldGeo, goldMat);
+  s.position.set((Math.random()-0.5)*4, -0.4, (Math.random()-0.5)*3);
+  scene.add(s);
+}
+function updateCam(){
+  camera.position.x = target.x + radius*Math.sin(phi)*Math.cos(theta);
+  camera.position.y = target.y + radius*Math.cos(phi);
+  camera.position.z = target.z + radius*Math.sin(phi)*Math.sin(theta);
+  camera.lookAt(target);
+}
+updateCam();
+function render(){ renderer.render(scene, camera); }
+render();
+canvas.addEventListener('pointerdown', e=>{ isDragging=true; lastX=e.clientX; lastY=e.clientY; });
+window.addEventListener('pointerup', ()=> isDragging=false);
+window.addEventListener('pointermove', e=>{
+  if(!isDragging) return;
+  const dx = e.clientX - lastX; const dy = e.clientY - lastY;
+  theta -= dx*0.01; phi += dy*0.01;
+  phi = Math.max(0.15, Math.min(1.45, phi));
+  lastX=e.clientX; lastY=e.clientY;
+  updateCam(); render();
+});
+canvas.addEventListener('wheel', e=>{
+  e.preventDefault();
+  radius += e.deltaY*0.02;
+  radius = Math.max(5, Math.min(35, radius));
+  updateCam(); render();
+},{passive:false});
+window.addEventListener('resize', ()=>{
+  renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+  camera.aspect = canvas.clientWidth/canvas.clientHeight;
+  camera.updateProjectionMatrix();
+  render();
+});
+// 點擊元件高亮
+document.querySelectorAll('.comp').forEach(c=> c.addEventListener('click', ()=>{
+  document.querySelectorAll('.comp').forEach(x=>x.classList.remove('active'));
+  c.classList.add('active');
+  document.getElementById('hint').textContent = '已選：'+c.textContent+' （下一段會放大）';
+}));
+// Tab 切換
+const tabData = {
+  '概覽': `轉動轉盤 → CPO 共封裝<br><br>第1段：殼完成。<br>左12零件、右四Tab、底課程導航都跟Arduino本尊第4/13課一樣。<br><br><b>TODO: PackageModel</b><br><b>TODO: Curve</b><br><b>TODO: Wavelength</b>`,
+  '引腳圖': `GPU (D13) → 電阻外端 → Optical engines<br>GND → Ge photodetectors<br>5V → Interposer<br>A0 → SOI stack 分壓`,
+  '示例': `const int LED = GPU;<br>analogRead(SOIs) → 25G x4 =100G<br>map(best,0,1023,0,180) → 光點`,
+  '規格': `Wavelength 1548nm 1550nm 1552nm 1554nm<br>InstancedMesh 焊球 12x10<br>TubeGeometry 光纖 48段<br>SOI 厚度誇張顯示`
+};
+document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=>{
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  document.getElementById('tabContent').innerHTML = tabData[t.textContent];
+}));
+</script>
+</body>
+</html>
